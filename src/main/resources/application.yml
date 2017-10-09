@@ -1,0 +1,12 @@
+nxt.url: 192.168.33.11:6876
+nxt.account: NXT-5FSH-EJLK-QHBA-7EETT
+nxt.secret: 'insane soul lovely agree brush veil branch awaken ball trouble support grow'
+
+#spring.data.mongodb.uri: ${mongodb.uri}
+
+nxt.uri: http://${nxt.url}/nxt
+nxt.secret.phrase : ${nxt.secret}
+
+multipart.maxFileSize: 25Mb
+
+

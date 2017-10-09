@@ -1,0 +1,202 @@
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>nxt file upload demo</title>
+
+        <style>
+
+            .submit {
+                font-size: 16px;
+                background: linear-gradient(#ffbc00 5%, #ffdd7f 100%);
+                border: 1px solid #e5a900;
+                color: #4E4D4B;
+                font-weight: bold;
+                cursor: pointer;
+
+                border-radius: 5px;
+                padding: 10px 0;
+                outline: none;
+                margin-top: 5px;
+                width: 20%;
+            }
+
+            .submit:hover {
+                background: linear-gradient(#ffdd7f 5%, #ffbc00 100%);
+            }
+
+            .input {
+                font-size: 16px;
+                border: 1px solid #e5a900;
+                color: #4E4D4B;
+                font-weight: bold;
+                cursor: pointer;
+
+                border-radius: 5px;
+                padding: 10px;
+                outline: none;
+                margin-top: 5px;
+                width: 20%;
+            }
+        </style>
+
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+        <link rel="stylesheet" href="http://jqueryui.com/resources/demos/style.css">
+
+        <link type="text/css" rel="stylesheet" href="waitMe.css">
+
+        <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+        <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+
+        <script src="waitMe.js"></script>
+    </head>
+
+    <body>
+
+        <form id="upload_form" method="post" enctype="multipart/form-data">
+            <input type="text" class="input" id="accountId" placeholder="Your NXT Account">
+            <br/>
+
+            <input type="file" style="margin-top:10px;" accept="image/*" id="file" onchange="showMyImage(this)"/>
+            <br/>
+
+            <img id="image" style="width:20%; margin-top:10px;" src="" alt="image"/>
+            <br/>
+
+            <input type="submit" id="submit" value="Upload" class="submit"/>
+        </form>
+
+
+        <div id="dialog-confirm" title="Payment request">
+            <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>Ownership rights on the chosen digital asset will be permanently stored in the NXT blockhain and cannot be stolen.</p>
+        </div>
+
+
+        <script type="text/javascript">
+
+            var assetData;
+
+            $(function() {
+
+                $('#submit').click(function(){
+                    run_waitMe('bounce');
+                });
+
+                $( "#dialog-confirm" ).dialog({
+                    autoOpen: false,
+                    resizable: false,
+                    height:140,
+                    modal: false,
+                    buttons: {
+                        "Execute payment": function() {
+                            $( this ).dialog( "close" );
+                            run_waitMe('bounce');
+
+                            window.open('/nxtWallet');
+
+                            $.ajax({
+                                url: '/confirmPayment',
+                                data: assetData,
+
+                                type: 'POST',
+
+                                success: function (data) {
+                                    $('#upload_form').waitMe('hide');
+                                    $('#upload_form')[0].reset();
+                                    $('#image').removeAttr('src').replaceWith($('#image').clone());
+                                },
+
+                                contentType: "application/json; charset=utf-8",
+                                dataType: "json",
+
+                                crossDomain: true,
+
+                                async: true,
+                                cache: false
+                            });
+
+                        },
+                        Cancel: function() {
+                            $( this ).dialog( "close" );
+                        }
+                    }
+                });
+
+                function run_waitMe(effect){
+                    $('#upload_form').waitMe({
+                        effect: effect,
+                        text: 'Please wait...',
+                        bg: 'rgba(255,255,255,0.7)',
+                        color: '#000',
+                        maxSize: '',
+                        source: 'img.svg',
+                        onClose: function() {}
+                    });
+                }
+
+            });
+
+
+            $("#upload_form").submit(function () {
+                var formData = new FormData();
+                formData.append('accountId', $('#accountId')[0].value);
+                formData.append('file', $('#file')[0].files[0]);
+
+                $.ajax({
+                    url: '/issueAsset',
+                    data: formData,
+
+                    enctype: 'multipart/form-data',
+                    type: 'POST',
+
+                    success: function (data) {
+                        assetData = data;
+                        $('#upload_form').waitMe('hide');
+
+                        $("#dialog-confirm").dialog("open");
+                        $('.ui-dialog :button').blur();
+
+                    },
+                    error: function (response) {
+                        $('#upload_form').waitMe('hide');
+
+                        var responseText = jQuery.parseJSON( response.responseText );
+                        alert(responseText.message);
+
+                        $('#upload_form')[0].reset();
+                        $('#image').removeAttr('src').replaceWith($('#image').clone());
+                    },
+
+                    contentType: false,
+                    processData: false,
+                    crossDomain: true,
+
+                    async: true,
+                    cache: false
+                });
+
+                return false;
+            });
+
+            function showMyImage(fileInput) {
+                var files = fileInput.files;
+                for (var i = 0; i < files.length; i++) {
+                    var file = files[i];
+                    var imageType = /image.*/;
+                    if (!file.type.match(imageType)) {
+                        continue;
+                    }
+                    var img = document.getElementById("image");
+                    img.file = file;
+                    var reader = new FileReader();
+                    reader.onload = (function (aImg) {
+                        return function (e) {
+                            aImg.src = e.target.result;
+                        };
+                    })(img);
+                    reader.readAsDataURL(file);
+                }
+            }
+        </script>
+
+    </body>
+</html>
